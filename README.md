@@ -159,7 +159,6 @@ This project is open-source and available under the MIT License.
 
 ---
 
-Would you like me to add the `MIT LICENSE` file as well (so the license badge and section work correctly on GitHub)?
 
 
 
