@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../logic/cubits/countries_cubit.dart';
@@ -13,6 +14,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _controller = TextEditingController();
+  Timer? _debounce;
   int _currentIndex = 0;
 
   @override
@@ -24,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -47,10 +50,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: isDarkMode ? Colors.grey[900] : Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? Colors.grey[850] : Colors.white,
         elevation: 0,
         title: const Text(
           'Countries',
@@ -65,14 +70,24 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           Container(
-            // color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: TextField(
               controller: _controller,
+              style: TextStyle(
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+              cursorColor: Colors.blueAccent,
               decoration: InputDecoration(
                 hintText: 'Search for a country',
-                hintStyle: TextStyle(color: Colors.grey[700]),
-                prefixIcon: Icon(Icons.search, color: Colors.grey[700]),
+                hintStyle: TextStyle(
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[700],
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: isDarkMode ? Colors.grey : Colors.grey[700],
+                ),
                 suffixIcon: _controller.text.isNotEmpty
                     ? IconButton(
                         icon: Icon(Icons.clear, color: Colors.grey[400]),
@@ -85,24 +100,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: Colors.grey[200],
+                fillColor: isDarkMode ? Colors.grey[800] : Colors.grey[200],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.blue[300]!, width: 1),
+                  borderSide: BorderSide(color: Colors.blueAccent, width: 1.2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               onChanged: (query) {
-                setState(() {});
-                context.read<CountriesCubit>().search(query);
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 400), () {
+                  context.read<CountriesCubit>().search(query);
+                });
               },
             ),
           ),
@@ -114,132 +127,165 @@ class _HomeScreenState extends State<HomeScreen> {
                 } else if (state is CountriesLoaded) {
                   final countries = state.countries;
                   if (countries.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
                         'No countries found.',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white70 : Colors.grey,
+                          fontSize: 16,
+                        ),
                       ),
                     );
                   }
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: countries.length,
-                    itemBuilder: (context, index) {
-                      final country = countries[index];
-                      final isFavorite = context
-                          .read<CountriesCubit>()
-                          .favorites
-                          .any((f) => f.code == country.code);
 
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 252, 249, 249),
-                          // borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              // blurRadius: 2,
-                              // offset: const Offset(0, 2),
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<CountriesCubit>().loadAll();
+                    },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: countries.length,
+                      itemBuilder: (context, index) {
+                        final country = countries[index];
+                        final isFavorite = context
+                            .read<CountriesCubit>()
+                            .favorites
+                            .any((f) => f.code == country.code);
+
+                        return Hero(
+                          tag: country.code,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
                             ),
-                          ],
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 3,
-                          ),
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              country.flagUrl,
-                              width: 100,
-                              height: 66,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? Colors.grey[850]
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  country.flagUrl,
                                   width: 100,
                                   height: 66,
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.flag, size: 24),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 100,
+                                      height: 66,
+                                      color: isDarkMode
+                                          ? Colors.grey[700]
+                                          : Colors.grey[200],
+                                      child: const Icon(Icons.flag, size: 24),
+                                    );
+                                  },
+                                ),
+                              ),
+                              title: Text(
+                                country.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Text(
+                                'Population: ${_formatNumber(country.population)}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? Colors.white70
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFavorite
+                                      ? Colors.red
+                                      : Colors.grey[400],
+                                ),
+                                onPressed: () async {
+                                  final details = await context
+                                      .read<CountriesCubit>()
+                                      .repository
+                                      .getCountryDetails(country.code);
+
+                                  context.read<CountriesCubit>().toggleFavorite(
+                                    details,
+                                  );
+                                  setState(() {});
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        isFavorite
+                                            ? '${details.name} removed from favorites'
+                                            : '${details.name} added to favorites',
+                                      ),
+                                      duration: const Duration(seconds: 1),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BlocProvider.value(
+                                      value: context.read<CountriesCubit>(),
+                                      child: DetailScreen(
+                                        countryCode: country.code,
+                                      ),
+                                    ),
+                                  ),
                                 );
                               },
                             ),
                           ),
-                          title: Text(
-                            country.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.25,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Population: ${_formatNumber(country.population)}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(
-                              isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: isFavorite ? Colors.red : Colors.grey[400],
-                            ),
-                            onPressed: () async {
-                              final details = await context
-                                  .read<CountriesCubit>()
-                                  .repository
-                                  .getCountryDetails(country.code);
-                              context.read<CountriesCubit>().toggleFavorite(
-                                details,
-                              );
-
-                              setState(() {});
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    isFavorite
-                                        ? '${details.name} removed from favorites'
-                                        : '${details.name} added to favorites',
-                                  ),
-                                  duration: const Duration(seconds: 1),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => BlocProvider.value(
-                                  value: context.read<CountriesCubit>(),
-                                  child: DetailScreen(
-                                    countryCode: country.code,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   );
                 } else if (state is CountriesError) {
                   return Center(
-                    child: Text(
-                      state.message,
-                      style: const TextStyle(color: Colors.red),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          state.message,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: () =>
+                              context.read<CountriesCubit>().loadAll(),
+                          child: const Text('Retry'),
+                        ),
+                      ],
                     ),
                   );
                 }
@@ -253,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? Colors.grey[850] : Colors.white,
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey[400],
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),

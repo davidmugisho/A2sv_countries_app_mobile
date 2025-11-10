@@ -1,6 +1,6 @@
 name: countries_app_mobile
 description: "A mobile app that lists and explores countries using the REST Countries API."
-publish_to: 'none' 
+publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -11,18 +11,24 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # UI + Icons
   cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.0
 
-  dio: ^5.4.0
-
+  # State management
   flutter_bloc: ^9.0.0
   equatable: ^2.0.5
 
+  # Networking
+  dio: ^5.4.0
+  http: ^1.2.1
+
+  # Local storage
   shared_preferences: ^2.3.2
 
+  # Image handling + effects
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
-  google_fonts: ^6.2.0
 
 dev_dependencies:
   flutter_test:

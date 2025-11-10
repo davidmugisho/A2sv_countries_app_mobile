@@ -50,7 +50,6 @@ class _DetailScreenState extends State<DetailScreen> {
             );
           },
         ),
-        centerTitle: false,
       ),
       body: BlocBuilder<CountriesCubit, CountriesState>(
         builder: (context, state) {
@@ -58,126 +57,116 @@ class _DetailScreenState extends State<DetailScreen> {
             return const Center(child: CircularProgressIndicator());
           } else if (state is CountryDetailLoaded) {
             final country = state.country;
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 240,
+
+            return ListView(
+              padding: const EdgeInsets.only(bottom: 24),
+              children: [
+                Hero(
+                  tag: country.code,
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    height: 220,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(15),
-                        topRight: Radius.circular(15),
-                      ),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
                           blurRadius: 10,
-                          offset: const Offset(0, 2),
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(15),
-                        topRight: Radius.circular(15),
-                      ),
+                      borderRadius: BorderRadius.circular(16),
                       child: Image.network(
                         country.flagUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(
-                              Icons.flag,
-                              size: 64,
-                              color: Colors.grey[300],
-                            ),
-                          );
-                        },
+                        errorBuilder: (context, error, stackTrace) => Center(
+                          child: Icon(
+                            Icons.flag,
+                            size: 64,
+                            color: Colors.grey[300],
+                          ),
+                        ),
                       ),
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 24),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Key Statistics',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Key Statistics',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        const SizedBox(height: 16),
+                      ),
+                      const SizedBox(height: 16),
 
-                        _buildStatCard(
-                          'Area',
-                          '${_formatNumber(country.area)} sq.km',
+                      _buildStatCard(
+                        'Area',
+                        '${_formatNumber(country.area)} sq.km',
+                      ),
+                      const SizedBox(height: 12),
+                      _buildStatCard(
+                        'Population',
+                        _formatNumber(country.population),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildStatCard('Region', country.region),
+                      const SizedBox(height: 12),
+                      _buildStatCard('Sub Region', country.subregion),
+
+                      const SizedBox(height: 24),
+
+                      const Text(
+                        'Timezone(s)',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
-                        const SizedBox(height: 12),
-                        _buildStatCard(
-                          'Population',
-                          _formatNumber(country.population),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildStatCard('Region', country.region),
-                        const SizedBox(height: 12),
-                        _buildStatCard('Sub Region', country.subregion),
+                      ),
+                      const SizedBox(height: 12),
 
-                        const SizedBox(height: 24),
-
-                        const Text(
-                          'Timezone',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: country.timezones.map((tz) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: country.timezones.map((tz) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey[300]!,
+                                width: 1,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.grey[300]!,
-                                  width: 1,
-                                ),
+                            ),
+                            child: Text(
+                              tz,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
-                              child: Text(
-                                tz,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-
-                        const SizedBox(height: 24),
-                      ],
-                    ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           } else if (state is CountriesError) {
             return Center(
@@ -198,11 +187,9 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () {
-                        context.read<CountriesCubit>().getCountryDetails(
-                          widget.countryCode,
-                        );
-                      },
+                      onPressed: () => context
+                          .read<CountriesCubit>()
+                          .getCountryDetails(widget.countryCode),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
@@ -271,7 +258,6 @@ class _DetailScreenState extends State<DetailScreen> {
 
   String _formatNumber(dynamic number) {
     if (number == null) return 'N/A';
-
     int num;
     if (number is String) {
       num = int.tryParse(number) ?? 0;
