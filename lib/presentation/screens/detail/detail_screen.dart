@@ -20,15 +20,37 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: BlocBuilder<CountriesCubit, CountriesState>(
           builder: (context, state) {
             if (state is CountryDetailLoaded) {
-              return Text(state.country.name);
+              return Text(
+                state.country.name,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              );
             }
-            return const Text('Country Details');
+            return const Text(
+              'Country Details',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            );
           },
         ),
+        centerTitle: false,
       ),
       body: BlocBuilder<CountriesCubit, CountriesState>(
         builder: (context, state) {
@@ -37,56 +59,165 @@ class _DetailScreenState extends State<DetailScreen> {
           } else if (state is CountryDetailLoaded) {
             final country = state.country;
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Image.network(
-                      country.flagUrl,
-                      width: 200,
-                      height: 120,
-                      fit: BoxFit.cover,
+                  Container(
+                    width: double.infinity,
+                    height: 240,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(15),
+                        topRight: Radius.circular(15),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(15),
+                        topRight: Radius.circular(15),
+                      ),
+                      child: Image.network(
+                        country.flagUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.flag,
+                              size: 64,
+                              color: Colors.grey[300],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    country.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+
+                  const SizedBox(height: 24),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Key Statistics',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        _buildStatCard(
+                          'Area',
+                          '${_formatNumber(country.area)} sq.km',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStatCard(
+                          'Population',
+                          _formatNumber(country.population),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildStatCard('Region', country.region),
+                        const SizedBox(height: 12),
+                        _buildStatCard('Sub Region', country.subregion),
+
+                        const SizedBox(height: 24),
+
+                        const Text(
+                          'Timezone',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: country.timezones.map((tz) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                tz,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 24),
+                      ],
                     ),
                   ),
-                  Text('Capital: ${country.capital}'),
-                  Text('Region: ${country.region}'),
-                  Text('Subregion: ${country.subregion}'),
-                  Text('Population: ${country.population}'),
-                  Text('Area: ${country.area} km²'),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Timezones',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  ...country.timezones.map((tz) => Text(tz)).toList(),
                 ],
               ),
             );
           } else if (state is CountriesError) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(state.message),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<CountriesCubit>().getCountryDetails(
-                        widget.countryCode,
-                      );
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      state.message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<CountriesCubit>().getCountryDetails(
+                          widget.countryCode,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -94,5 +225,72 @@ class _DetailScreenState extends State<DetailScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildStatCard(String label, String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatNumber(dynamic number) {
+    if (number == null) return 'N/A';
+
+    int num;
+    if (number is String) {
+      num = int.tryParse(number) ?? 0;
+    } else if (number is int) {
+      num = number;
+    } else if (number is double) {
+      num = number.toInt();
+    } else {
+      return number.toString();
+    }
+
+    if (num >= 1000000) {
+      return '${(num / 1000000).toStringAsFixed(2)} million';
+    } else if (num >= 1000) {
+      return num.toString().replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]},',
+      );
+    }
+    return num.toString();
   }
 }
