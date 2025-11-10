@@ -1,0 +1,22 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub-cache/
+build/
+flutter_*.png
+
+# Android related
+local.properties
+.gradle/
+*.iml
+
+# iOS related
+Pods/
+DerivedData/
+
+# VSCode/IntelliJ
+.vscode/
+.idea/
+
+# Others
+*.log
