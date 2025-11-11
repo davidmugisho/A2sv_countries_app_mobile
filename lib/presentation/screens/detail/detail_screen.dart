@@ -19,31 +19,36 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: BlocBuilder<CountriesCubit, CountriesState>(
           builder: (context, state) {
+            final textColor = theme.textTheme.titleLarge?.color ?? Colors.white;
             if (state is CountryDetailLoaded) {
               return Text(
                 state.country.name,
-                style: const TextStyle(
-                  color: Colors.black,
+                style: TextStyle(
+                  color: textColor,
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
               );
             }
-            return const Text(
+            return Text(
               'Country Details',
               style: TextStyle(
-                color: Colors.black,
+                color: textColor,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
@@ -67,15 +72,17 @@ class _DetailScreenState extends State<DetailScreen> {
                     margin: const EdgeInsets.all(16),
                     height: 220,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.cardColor,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                      boxShadow: isDark
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
@@ -83,58 +90,47 @@ class _DetailScreenState extends State<DetailScreen> {
                         country.flagUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Center(
-                          child: Icon(
-                            Icons.flag,
-                            size: 64,
-                            color: Colors.grey[300],
-                          ),
+                          child: Icon(Icons.flag, size: 64, color: Colors.grey),
                         ),
                       ),
                     ),
                   ),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Key Statistics',
-                        style: TextStyle(
-                          fontSize: 18,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       _buildStatCard(
+                        context,
                         'Area',
                         '${_formatNumber(country.area)} sq.km',
                       ),
                       const SizedBox(height: 12),
                       _buildStatCard(
+                        context,
                         'Population',
                         _formatNumber(country.population),
                       ),
                       const SizedBox(height: 12),
-                      _buildStatCard('Region', country.region),
+                      _buildStatCard(context, 'Region', country.region),
                       const SizedBox(height: 12),
-                      _buildStatCard('Sub Region', country.subregion),
-
+                      _buildStatCard(context, 'Sub Region', country.subregion),
                       const SizedBox(height: 24),
-
-                      const Text(
+                      Text(
                         'Timezone(s)',
-                        style: TextStyle(
-                          fontSize: 18,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 12),
-
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -145,19 +141,17 @@ class _DetailScreenState extends State<DetailScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardColor,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.grey[300]!,
+                                color: theme.dividerColor,
                                 width: 1,
                               ),
                             ),
                             child: Text(
                               tz,
-                              style: const TextStyle(
-                                fontSize: 14,
+                              style: theme.textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black87,
                               ),
                             ),
                           );
@@ -175,32 +169,22 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: theme.colorScheme.error,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       state.message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
+                      style: theme.textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () => context
                           .read<CountriesCubit>()
                           .getCountryDetails(widget.countryCode),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -214,29 +198,33 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildStatCard(String label, String value) {
+  Widget _buildStatCard(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -244,9 +232,7 @@ class _DetailScreenState extends State<DetailScreen> {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Colors.black87,
+              style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
